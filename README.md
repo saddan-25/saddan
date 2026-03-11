@@ -1,2 +1,0 @@
-# saddan
-apaajadah
