@@ -614,14 +614,29 @@ function startClock() {
 // ════════════════════════════════════════════
 // YAHOO FINANCE API
 // ════════════════════════════════════════════
-const PROXY = 'https://corsproxy.io/?';
+const PROXIES = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+];
 const YF = 'https://query1.finance.yahoo.com';
+
+async function fetchWithProxy(url) {
+  for (const proxy of PROXIES) {
+    try {
+      const r = await fetch(proxy(url), {signal: AbortSignal.timeout(8000)});
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (d) return d;
+    } catch { continue; }
+  }
+  return null;
+}
 
 async function fetchPrice(ticker) {
   try {
     const url = `${YF}/v8/finance/chart/${ticker}.JK?interval=1d&range=1d`;
-    const r = await fetch(PROXY + encodeURIComponent(url));
-    const d = await r.json();
+    const d = await fetchWithProxy(url);
     const result = d?.chart?.result?.[0];
     if (!result) return null;
     const meta = result.meta;
@@ -640,8 +655,7 @@ async function fetchPrice(ticker) {
 async function fetchChart(ticker, range='3mo') {
   try {
     const url = `${YF}/v8/finance/chart/${ticker}.JK?interval=1d&range=${range}`;
-    const r = await fetch(PROXY + encodeURIComponent(url));
-    const d = await r.json();
+    const d = await fetchWithProxy(url);
     const result = d?.chart?.result?.[0];
     if (!result) return [];
     const ts = result.timestamp;
@@ -671,8 +685,8 @@ async function loadPrices() {
   // Update IHSG
   try {
     const url = `${YF}/v8/finance/chart/%5EJKSE?interval=1d&range=1d`;
-    const r = await fetch(PROXY + encodeURIComponent(url));
-    const d = await r.json();
+    const d = await fetchWithProxy(url);
+    const meta = d?.chart?.result?.[0]?.meta;
     const meta = d?.chart?.result?.[0]?.meta;
     if (meta) {
       const chg = ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose * 100).toFixed(2);
