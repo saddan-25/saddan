@@ -228,14 +228,23 @@
 <body>
 
 <!-- SETUP SCREEN -->
-<div id="setup-screen">
-  <div class="logo" style="font-size:24px">SADDAN TERMINAL</div>
-  <p>IDX Personal Command Center<br>Masukkan Anthropic API Key lu untuk mengaktifkan AI Analysis.<br>Key disimpan hanya di browser lu (session storage) — aman.</p>
-  <div class="setup-label">ANTHROPIC API KEY</div>
-  <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
-  <button id="activate-btn" onclick="activateTerminal()">▸ AKTIFKAN TERMINAL</button>
-  <p id="setup-status" style="font-size:10px;color:#ff6a00;min-height:16px"></p>
-  <p style="font-size:9px;color:#333">Belum punya key? Daftar di console.anthropic.com → API Keys<br>Key tersimpan permanen di browser lu (localStorage) — tidak perlu input lagi</p>
+<div id="setup-screen" style="position:fixed;inset:0;background:#060608;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="font-family:Orbitron,monospace;font-size:22px;font-weight:900;color:#ff6a00;letter-spacing:6px;">SADDAN TERMINAL</div>
+  <div style="color:#6a6a7a;font-size:11px;text-align:center;line-height:1.8;font-family:monospace;">IDX Personal Command Center<br>Masukkan Anthropic API Key untuk mengaktifkan AI Analysis</div>
+  <div style="color:#6a6a7a;font-size:9px;letter-spacing:1px;font-family:monospace;">ANTHROPIC API KEY</div>
+  <input 
+    id="api-key-input" 
+    type="text"
+    placeholder="sk-ant-api03-..." 
+    style="background:#0f0f14;border:1px solid #1a1a24;color:#c8c8d8;padding:10px 16px;font-family:monospace;font-size:12px;width:380px;outline:none;"
+    onkeydown="if(event.key==='Enter') doActivate()"
+  />
+  <button 
+    onclick="doActivate()"
+    style="background:#ff6a00;color:#000;border:none;padding:10px 32px;font-family:monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:2px;"
+  >▸ AKTIFKAN TERMINAL</button>
+  <div id="setup-msg" style="font-family:monospace;font-size:11px;color:#ff6a00;height:20px;"></div>
+  <div style="font-family:monospace;font-size:9px;color:#333;">Belum punya key? console.anthropic.com → API Keys → Create Key</div>
 </div>
 
 <!-- HEADER -->
@@ -562,35 +571,37 @@ const chartCache = {};
 // ════════════════════════════════════════════
 // SETUP
 // ════════════════════════════════════════════
-function activateTerminal() {
-  const key = document.getElementById('api-key-input').value.trim();
-  const status = document.getElementById('setup-status');
-  const btn = document.getElementById('activate-btn');
+function doActivate() {
+  const input = document.getElementById('api-key-input');
+  const msg = document.getElementById('setup-msg');
+  const key = input ? input.value.trim() : '';
   
-  if (key.length < 20) {
-    status.style.color = '#ff3355';
-    status.textContent = '❌ Key terlalu pendek — pastikan copy lengkap dari console.anthropic.com';
+  if (!key || key.length < 20) {
+    if (msg) { msg.style.color='#ff3355'; msg.textContent='❌ Key terlalu pendek — copy ulang dari console.anthropic.com'; }
     return;
   }
   
-  status.style.color = '#ff6a00';
-  status.textContent = '⟳ Mengaktifkan terminal...';
-  btn.disabled = true;
+  if (msg) { msg.style.color='#ff6a00'; msg.textContent='⟳ Mengaktifkan...'; }
   
   ANTHROPIC_KEY = key;
-  localStorage.setItem('saddanKey', key);
+  try { localStorage.setItem('saddanKey', key); } catch(e) {}
   
   setTimeout(() => {
-    document.getElementById('setup-screen').classList.add('hidden');
+    const screen = document.getElementById('setup-screen');
+    if (screen) screen.style.display = 'none';
     initTerminal();
-  }, 500);
+  }, 300);
 }
 
+function activateTerminal() { doActivate(); }
+
 window.onload = () => {
-  const saved = localStorage.getItem('saddanKey');
-  if (saved) {
+  let saved = '';
+  try { saved = localStorage.getItem('saddanKey') || ''; } catch(e) {}
+  if (saved && saved.length > 20) {
     ANTHROPIC_KEY = saved;
-    document.getElementById('setup-screen').classList.add('hidden');
+    const screen = document.getElementById('setup-screen');
+    if (screen) screen.style.display = 'none';
     initTerminal();
   }
   // Fill modal stock select
