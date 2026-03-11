@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SADDAN TERMINAL — IDX Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #060608;
+    --bg2: #0b0b0f;
+    --bg3: #0f0f14;
+    --border: #1a1a24;
+    --orange: #ff6a00;
+    --orange2: #ff9500;
+    --green: #00ff88;
+    --red: #ff3355;
+    --blue: #4488ff;
+    --purple: #aa66ff;
+    --dim: #3a3a4a;
+    --text: #c8c8d8;
+    --text2: #6a6a7a;
+    --font: 'Share Tech Mono', monospace;
+    --font2: 'Orbitron', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 12px; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
+
+  /* SETUP SCREEN */
+  #setup-screen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 999;
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px;
+  }
+  #setup-screen h1 { font-family: var(--font2); color: var(--orange); font-size: 28px; letter-spacing: 6px; }
+  #setup-screen p { color: var(--text2); font-size: 11px; text-align: center; line-height: 1.8; max-width: 440px; }
+  #setup-screen input {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 16px; font-family: var(--font); font-size: 12px; width: 380px;
+    outline: none; border-radius: 0;
+  }
+  #setup-screen input:focus { border-color: var(--orange); }
+  #setup-screen button {
+    background: var(--orange); color: #000; border: none; padding: 10px 32px;
+    font-family: var(--font2); font-size: 11px; letter-spacing: 2px; cursor: pointer;
+    font-weight: 700;
+  }
+  #setup-screen button:hover { background: var(--orange2); }
+  .setup-label { color: var(--text2); font-size: 10px; letter-spacing: 1px; }
+
+  /* HEADER */
+  #header {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 8px 16px; display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0; height: 44px;
+  }
+  .logo { font-family: var(--font2); font-size: 15px; font-weight: 900; color: var(--orange); letter-spacing: 5px; }
+  .header-right { display: flex; gap: 20px; align-items: center; }
+  .stat-pill { font-size: 10px; }
+  .stat-pill .label { color: var(--text2); margin-right: 4px; }
+  .live-dot { display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* TICKER */
+  #ticker {
+    background: #080808; border-bottom: 1px solid var(--border);
+    height: 26px; overflow: hidden; display: flex; align-items: center; flex-shrink: 0;
+  }
+  #ticker-inner { display: flex; white-space: nowrap; animation: ticker 60s linear infinite; }
+  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .tick-item { margin-right: 32px; font-size: 10px; }
+  .tick-id { color: var(--text2); margin-right: 5px; }
+
+  /* MAIN */
+  #main { display: grid; grid-template-columns: 200px 1fr 230px; gap: 1px; background: var(--border); flex: 1; overflow: hidden; }
+  .panel { background: var(--bg); overflow: auto; }
+  .panel-title {
+    font-family: var(--font2); font-size: 8px; letter-spacing: 2px; color: var(--orange);
+    padding: 8px 12px 6px; border-bottom: 1px solid var(--border); position: sticky; top: 0;
+    background: var(--bg); z-index: 2;
+  }
+
+  /* WATCHLIST */
+  #watchlist-panel { padding: 0; }
+  #search-box {
+    width: 100%; background: var(--bg2); border: none; border-bottom: 1px solid var(--border);
+    color: var(--text); padding: 7px 12px; font-family: var(--font); font-size: 11px; outline: none;
+  }
+  #search-box::placeholder { color: var(--dim); }
+  .stock-row {
+    padding: 7px 12px; cursor: pointer; border-left: 2px solid transparent;
+    border-bottom: 1px solid #0d0d12; transition: all 0.12s;
+  }
+  .stock-row:hover { background: var(--bg3); }
+  .stock-row.active { background: var(--bg3); border-left-color: var(--orange); }
+  .sr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+  .sr-id { color: #fff; font-weight: 700; font-size: 12px; }
+  .sr-signal { font-size: 8px; letter-spacing: 1px; font-weight: 700; }
+  .sr-bottom { display: flex; justify-content: space-between; }
+  .sr-price { color: var(--text2); font-size: 11px; }
+  .sr-chg { font-size: 11px; }
+
+  /* CENTER */
+  #center-panel { display: flex; flex-direction: column; padding: 0; }
+  #stock-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .sh-name-block .ticker-big { font-family: var(--font2); font-size: 20px; color: #fff; letter-spacing: 3px; font-weight: 900; }
+  .sh-name-block .name-small { color: var(--text2); font-size: 10px; margin-top: 3px; }
+  .sh-price-block { text-align: center; }
+  .sh-price-block .price-big { font-family: var(--font2); font-size: 22px; color: #fff; font-weight: 700; }
+  .sh-price-block .chg-line { font-size: 12px; margin-top: 3px; }
+  .signal-box {
+    padding: 6px 18px; font-family: var(--font2); font-size: 14px; font-weight: 900;
+    letter-spacing: 3px; text-align: center; border: 1px solid; min-width: 100px;
+  }
+  .signal-sub { font-size: 8px; color: var(--text2); text-align: center; margin-top: 4px; letter-spacing: 1px; }
+
+  /* STAT BAR */
+  #stat-bar { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .stat-cell { flex: 1; padding: 7px 12px; border-right: 1px solid var(--border); }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell .sc-label { color: var(--text2); font-size: 9px; letter-spacing: 1px; margin-bottom: 3px; }
+  .stat-cell .sc-val { color: var(--text); font-size: 12px; font-weight: 700; }
+
+  /* TABS */
+  #tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .tab-btn {
+    padding: 7px 16px; background: none; border: none; color: var(--text2);
+    font-family: var(--font2); font-size: 9px; letter-spacing: 1px; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+  .tab-btn:hover { color: var(--text); }
+
+  /* TAB CONTENT */
+  #tab-content { flex: 1; overflow: auto; padding: 12px 16px; }
+
+  /* CHARTS (canvas based simple) */
+  .chart-container { position: relative; margin-bottom: 12px; }
+  .chart-label { font-size: 9px; color: var(--text2); letter-spacing: 1px; margin-bottom: 4px; }
+  canvas { display: block; }
+
+  /* AI ANALYSIS */
+  #ai-btn {
+    background: var(--orange); color: #000; border: none; padding: 9px 20px;
+    font-family: var(--font2); font-size: 9px; letter-spacing: 2px; cursor: pointer;
+    font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  #ai-btn:disabled { background: var(--bg3); color: var(--dim); cursor: not-allowed; }
+  #ai-btn .spinner { animation: spin 0.8s linear infinite; display: inline-block; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  #ai-output {
+    background: var(--bg3); border: 1px solid var(--border);
+    padding: 14px; white-space: pre-wrap; line-height: 1.8; color: var(--text); font-size: 11px;
+    min-height: 80px;
+  }
+  .mode-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+  .mode-btn {
+    padding: 5px 14px; border: 1px solid var(--border); background: none;
+    color: var(--text2); font-family: var(--font); font-size: 10px; cursor: pointer;
+  }
+  .mode-btn.active { border-color: var(--orange); color: var(--orange); background: #ff6a0011; }
+
+  /* PORTFOLIO */
+  .port-summary { display: flex; gap: 8px; margin-bottom: 14px; }
+  .port-card { flex: 1; background: var(--bg3); border-top: 2px solid var(--orange); padding: 10px 12px; }
+  .port-card .pc-label { font-size: 9px; color: var(--text2); letter-spacing: 1px; margin-bottom: 4px; }
+  .port-card .pc-val { font-family: var(--font2); font-size: 13px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 9px; letter-spacing: 1px; color: var(--text2); padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; font-weight: normal; }
+  td { padding: 8px 8px; border-bottom: 1px solid #0d0d12; font-size: 11px; }
+  .add-pos-btn {
+    background: none; border: 1px solid var(--dim); color: var(--text2);
+    padding: 6px 14px; font-family: var(--font); font-size: 10px; cursor: pointer;
+    margin-top: 10px;
+  }
+  .add-pos-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* RIGHT PANEL */
+  #right-panel { display: flex; flex-direction: column; }
+  .right-section { border-bottom: 1px solid var(--border); padding: 10px 12px; }
+  .sector-bar { margin-bottom: 7px; }
+  .sec-row { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 10px; }
+  .sec-name { color: var(--text2); }
+  .sec-track { height: 3px; background: var(--bg3); margin-top: 2px; }
+  .sec-fill { height: 100%; transition: width 0.5s; }
+
+  .news-item { padding: 8px 0; border-bottom: 1px solid #0d0d12; }
+  .news-meta { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .news-time { color: var(--dim); font-size: 9px; }
+  .news-tag { font-size: 8px; padding: 1px 7px; letter-spacing: 1px; }
+  .news-headline { color: #999; font-size: 10px; line-height: 1.5; }
+
+  .comic-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid #0d0d12; cursor: pointer;
+  }
+  .comic-row:hover .cr-id { color: var(--orange2); }
+  .cr-id { color: var(--orange); font-size: 11px; font-weight: 700; }
+  .cr-price { color: var(--text2); font-size: 10px; }
+  .cr-sig { font-size: 9px; letter-spacing: 1px; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: #000a; z-index: 100; display: flex; align-items: center; justify-content: center; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); padding: 20px; width: 360px; }
+  .modal h3 { font-family: var(--font2); font-size: 12px; color: var(--orange); letter-spacing: 2px; margin-bottom: 16px; }
+  .modal input, .modal select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 12px; font-family: var(--font); font-size: 11px; outline: none; margin-bottom: 8px;
+  }
+  .modal input:focus { border-color: var(--orange); }
+  .modal-btns { display: flex; gap: 8px; margin-top: 8px; }
+  .modal-btns button { flex: 1; padding: 8px; font-family: var(--font); font-size: 11px; cursor: pointer; border: none; }
+  .btn-confirm { background: var(--orange); color: #000; font-weight: 700; }
+  .btn-cancel { background: var(--bg3); color: var(--text2); }
+
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .orange { color: var(--orange); }
+  .dim { color: var(--text2); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="logo" style="font-size:24px">SADDAN TERMINAL</div>
+  <p>IDX Personal Command Center<br>Masukkan Anthropic API Key lu untuk mengaktifkan AI Analysis.<br>Key disimpan hanya di browser lu (session storage) — aman.</p>
+  <div class="setup-label">ANTHROPIC API KEY</div>
+  <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
+  <button onclick="activateTerminal()">▸ AKTIFKAN TERMINAL</button>
+  <p style="font-size:9px;color:#333">Belum punya key? Daftar di console.anthropic.com → API Keys</p>
+</div>
+
+<!-- HEADER -->
+<div id="header">
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="logo">SADDAN TERMINAL</div>
+    <span style="color:var(--dim);font-size:10px">IDX · ALL STOCKS</span>
+    <span style="font-size:10px"><span class="live-dot"></span> <span style="color:var(--green);font-size:9px">LIVE</span></span>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill"><span class="label">IHSG</span><span id="ihsg-val" class="green">—</span></div>
+    <div class="stat-pill"><span class="label">USD/IDR</span><span id="usd-val" style="color:var(--orange)">15,820</span></div>
+    <div class="stat-pill"><span class="label">MODE</span>
+      <span id="mode-label" style="color:var(--purple)">SCALPING</span>
+    </div>
+    <div style="color:var(--dim);font-size:11px" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div id="ticker"><div id="ticker-inner">Loading market data...</div></div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT: WATCHLIST -->
+  <div class="panel" id="watchlist-panel">
+    <div class="panel-title">▸ WATCHLIST · IDX</div>
+    <input type="text" id="search-box" placeholder="Cari kode saham..." oninput="filterStocks(this.value)" />
+    <div id="stock-list"></div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="panel" id="center-panel">
+    <div id="stock-header">
+      <div class="sh-name-block">
+        <div class="ticker-big" id="sh-ticker">—</div>
+        <div class="name-small" id="sh-name">Pilih saham dari watchlist</div>
+      </div>
+      <div class="sh-price-block">
+        <div class="price-big" id="sh-price">Rp —</div>
+        <div class="chg-line" id="sh-chg">—</div>
+      </div>
+      <div>
+        <div class="signal-box" id="signal-box" style="color:var(--text2);border-color:var(--dim)">—</div>
+        <div class="signal-sub" id="signal-sub">—</div>
+      </div>
+    </div>
+
+    <div id="stat-bar">
+      <div class="stat-cell"><div class="sc-label">VOLUME</div><div class="sc-val" id="st-vol">—</div></div>
+      <div class="stat-cell"><div class="sc-label">MKT CAP</div><div class="sc-val" id="st-cap">—</div></div>
+      <div class="stat-cell"><div class="sc-label">52W HIGH</div><div class="sc-val" id="st-high">—</div></div>
+      <div class="stat-cell"><div class="sc-label">52W LOW</div><div class="sc-val" id="st-low">—</div></div>
+      <div class="stat-cell"><div class="sc-label">RSI(14)</div><div class="sc-val" id="st-rsi">—</div></div>
+      <div class="stat-cell"><div class="sc-label">P/E</div><div class="sc-val" id="st-pe">—</div></div>
+    </div>
+
+    <div id="tabs">
+      <button class="tab-btn active" onclick="switchTab('chart',this)">CHART</button>
+      <button class="tab-btn" onclick="switchTab('analysis',this)">AI ANALYSIS</button>
+      <button class="tab-btn" onclick="switchTab('portfolio',this)">PORTFOLIO</button>
+      <button class="tab-btn" onclick="switchTab('screener',this)">SCREENER</button>
+    </div>
+
+    <div id="tab-content">
+
+      <!-- CHART TAB -->
+      <div id="tab-chart">
+        <div class="chart-container">
+          <div class="chart-label">HARGA · MA20 · MA50</div>
+          <canvas id="chart-price" width="580" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+          <div class="chart-label">VOLUME</div>
+          <canvas id="chart-vol" width="580" height="60"></canvas>
+        </div>
+        <div class="chart-container">
+          <div class="chart-label">RSI(14) — Oversold &lt;30 | Overbought &gt;70</div>
+          <canvas id="chart-rsi" width="580" height="70"></canvas>
+        </div>
+      </div>
+
+      <!-- ANALYSIS TAB -->
+      <div id="tab-analysis" class="hidden">
+        <div class="mode-toggle">
+          <button class="mode-btn active" onclick="setMode('scalping',this)">⚡ SCALPING</button>
+          <button class="mode-btn" onclick="setMode('growth',this)">📈 GROWTH/HOLD</button>
+        </div>
+        <button id="ai-btn" onclick="runAnalysis()">
+          <span>▸</span> <span id="ai-btn-text">JALANKAN AI ANALYSIS</span>
+        </button>
+        <div id="ai-output" style="color:var(--dim);font-style:italic">
+Pilih saham → klik tombol di atas untuk analisis mendalam dari Claude AI.
+
+Analisis mencakup:
+• Sinyal teknikal scalping / growth
+• Entry price, target profit, stop loss
+• Faktor risiko & katalis
+• Skor kepercayaan (1-10)
+        </div>
+      </div>
+
+      <!-- PORTFOLIO TAB -->
+      <div id="tab-portfolio" class="hidden">
+        <div class="port-summary">
+          <div class="port-card">
+            <div class="pc-label">TOTAL NILAI</div>
+            <div class="pc-val" id="port-total">Rp 0</div>
+          </div>
+          <div class="port-card" style="border-top-color:var(--green)">
+            <div class="pc-label">UNREALIZED P&L</div>
+            <div class="pc-val" id="port-pnl">Rp 0</div>
+          </div>
+          <div class="port-card" style="border-top-color:var(--blue)">
+            <div class="pc-label">COMIC #7 BUDGET</div>
+            <div class="pc-val" style="color:var(--blue)">Rp 100jt</div>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>KODE</th><th>LOT</th><th>AVG</th><th>HARGA</th><th>NILAI</th><th>P&L</th><th>%</th><th></th></tr></thead>
+          <tbody id="port-body"></tbody>
+        </table>
+        <button class="add-pos-btn" onclick="showAddModal()">+ TAMBAH POSISI</button>
+      </div>
+
+      <!-- SCREENER TAB -->
+      <div id="tab-screener" class="hidden">
+        <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+          <button class="mode-btn active" onclick="runScreener('scalping',this)" style="font-size:9px">⚡ TOP SCALPING</button>
+          <button class="mode-btn" onclick="runScreener('growth',this)" style="font-size:9px">📈 TOP GROWTH</button>
+          <button class="mode-btn" onclick="runScreener('oversold',this)" style="font-size:9px">🎯 OVERSOLD</button>
+          <span id="screen-status" style="color:var(--dim);font-size:9px;margin-left:auto"></span>
+        </div>
+        <table>
+          <thead><tr><th>KODE</th><th>HARGA</th><th>CHG%</th><th>RSI</th><th>SIGNAL</th><th>SCORE</th></tr></thead>
+          <tbody id="screener-body"><tr><td colspan="6" style="color:var(--dim);padding:20px;text-align:center">Klik tombol screener di atas</td></tr></tbody>
+        </table>
+      </div>
+
+    </div><!-- end tab-content -->
+  </div><!-- end center -->
+
+  <!-- RIGHT PANEL -->
+  <div class="panel" id="right-panel">
+    <div class="panel-title">▸ SEKTOR · HARI INI</div>
+    <div class="right-section" id="sector-section">
+      <!-- filled by JS -->
+    </div>
+
+    <div class="panel-title" style="padding-top:10px">▸ COMIC #7 WATCHLIST</div>
+    <div class="right-section" id="comic-section">
+      <div class="comic-row" onclick="selectStock('PGEO')" style="cursor:pointer">
+        <span class="cr-id">PGEO</span>
+        <span class="cr-price" id="cr-PGEO-p">—</span>
+        <span class="cr-sig" id="cr-PGEO-s">—</span>
+      </div>
+      <div class="comic-row" onclick="selectStock('BREN')">
+        <span class="cr-id">BREN</span>
+        <span class="cr-price" id="cr-BREN-p">—</span>
+        <span class="cr-sig" id="cr-BREN-s">—</span>
+      </div>
+      <div class="comic-row" onclick="selectStock('TLKM')">
+        <span class="cr-id">TLKM</span>
+        <span class="cr-price" id="cr-TLKM-p">—</span>
+        <span class="cr-sig" id="cr-TLKM-s">—</span>
+      </div>
+      <div class="comic-row" onclick="selectStock('BBCA')">
+        <span class="cr-id">BBCA</span>
+        <span class="cr-price" id="cr-BBCA-p">—</span>
+        <span class="cr-sig" id="cr-BBCA-s">—</span>
+      </div>
+    </div>
+
+    <div class="panel-title" style="padding-top:10px">▸ MARKET NEWS</div>
+    <div id="news-section" style="padding:0 12px;overflow:auto">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<!-- ADD POSITION MODAL -->
+<div class="modal-overlay hidden" id="add-modal">
+  <div class="modal">
+    <h3>+ TAMBAH POSISI</h3>
+    <select id="m-stock">
+      <option value="">Pilih Saham...</option>
+    </select>
+    <input type="number" id="m-lot" placeholder="Jumlah Lot (1 lot = 100 lembar)" />
+    <input type="number" id="m-price" placeholder="Harga Beli (Rp)" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="hideModal()">BATAL</button>
+      <button class="btn-confirm" onclick="addPosition()">TAMBAH</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════
+let ANTHROPIC_KEY = '';
+let currentMode = 'scalping';
+let currentStock = null;
+let currentChartData = [];
+let portfolio = JSON.parse(localStorage.getItem('saddanPort') || '[]');
+
+// ════════════════════════════════════════════
+// IDX STOCK LIST (Major 120+ stocks)
+// ════════════════════════════════════════════
+const IDX_STOCKS = [
+  // Banking
+  {id:'BBCA',name:'Bank Central Asia',sector:'Banking'},
+  {id:'BBRI',name:'Bank Rakyat Indonesia',sector:'Banking'},
+  {id:'BMRI',name:'Bank Mandiri',sector:'Banking'},
+  {id:'BBNI',name:'Bank Negara Indonesia',sector:'Banking'},
+  {id:'BRIS',name:'Bank Syariah Indonesia',sector:'Banking'},
+  {id:'BTPS',name:'Bank BTPN Syariah',sector:'Banking'},
+  {id:'BNGA',name:'Bank CIMB Niaga',sector:'Banking'},
+  {id:'BJBR',name:'Bank Jabar Banten',sector:'Banking'},
+  {id:'BJTM',name:'Bank Jatim',sector:'Banking'},
+  {id:'PNBN',name:'Bank Pan Indonesia',sector:'Banking'},
+  // Energy & Mining
+  {id:'PGEO',name:'Pertamina Geothermal',sector:'Energy'},
+  {id:'BREN',name:'Barito Renewables',sector:'Energy'},
+  {id:'ADRO',name:'Adaro Energy',sector:'Coal'},
+  {id:'PTBA',name:'Bukit Asam',sector:'Coal'},
+  {id:'ITMG',name:'Indo Tambangraya Megah',sector:'Coal'},
+  {id:'INDY',name:'Indika Energy',sector:'Energy'},
+  {id:'MEDC',name:'Medco Energi',sector:'Energy'},
+  {id:'PGAS',name:'Perusahaan Gas Negara',sector:'Energy'},
+  {id:'ELSA',name:'Elnusa',sector:'Energy'},
+  {id:'AKRA',name:'AKR Corporindo',sector:'Energy'},
+  // Telecom & Tech
+  {id:'TLKM',name:'Telkom Indonesia',sector:'Telecom'},
+  {id:'EXCL',name:'XL Axiata',sector:'Telecom'},
+  {id:'ISAT',name:'Indosat Ooredoo',sector:'Telecom'},
+  {id:'FREN',name:'Smartfren',sector:'Telecom'},
+  {id:'EMTK',name:'Elang Mahkota Teknologi',sector:'Tech'},
+  {id:'GOTO',name:'GoTo Gojek Tokopedia',sector:'Tech'},
+  {id:'BUKA',name:'Bukalapak',sector:'Tech'},
+  {id:'DMMX',name:'Digital Mediatama Maxima',sector:'Tech'},
+  // Consumer
+  {id:'UNVR',name:'Unilever Indonesia',sector:'Consumer'},
+  {id:'ICBP',name:'Indofood CBP',sector:'Consumer'},
+  {id:'INDF',name:'Indofood Sukses Makmur',sector:'Consumer'},
+  {id:'MYOR',name:'Mayora Indah',sector:'Consumer'},
+  {id:'ULTJ',name:'Ultra Jaya Milk',sector:'Consumer'},
+  {id:'GOOD',name:'Garudafood',sector:'Consumer'},
+  {id:'CLEO',name:'Sariguna Primatirta',sector:'Consumer'},
+  {id:'SIDO',name:'Industri Jamu Sido Muncul',sector:'Consumer'},
+  {id:'HMSP',name:'HM Sampoerna',sector:'Consumer'},
+  {id:'GGRM',name:'Gudang Garam',sector:'Consumer'},
+  // Automotive & Manufacturing
+  {id:'ASII',name:'Astra International',sector:'Automotive'},
+  {id:'AUTO',name:'Astra Otoparts',sector:'Automotive'},
+  {id:'SMSM',name:'Selamat Sempurna',sector:'Manufacturing'},
+  {id:'INTP',name:'Indocement',sector:'Cement'},
+  {id:'SMGR',name:'Semen Indonesia',sector:'Cement'},
+  {id:'WTON',name:'Wijaya Karya Beton',sector:'Cement'},
+  // Property & Construction
+  {id:'BSDE',name:'Bumi Serpong Damai',sector:'Property'},
+  {id:'PWON',name:'Pakuwon Jati',sector:'Property'},
+  {id:'CTRA',name:'Ciputra Development',sector:'Property'},
+  {id:'SMRA',name:'Summarecon Agung',sector:'Property'},
+  {id:'WSKT',name:'Waskita Karya',sector:'Construction'},
+  {id:'WIKA',name:'Wijaya Karya',sector:'Construction'},
+  {id:'ADHI',name:'Adhi Karya',sector:'Construction'},
+  {id:'PTPP',name:'PP Persero',sector:'Construction'},
+  // Healthcare
+  {id:'KLBF',name:'Kalbe Farma',sector:'Healthcare'},
+  {id:'SIDO',name:'Sido Muncul',sector:'Healthcare'},
+  {id:'MIKA',name:'Mitra Keluarga',sector:'Healthcare'},
+  {id:'HEAL',name:'Medikaloka Hermina',sector:'Healthcare'},
+  {id:'PRDA',name:'Prodia Widyahusada',sector:'Healthcare'},
+  // Transport & Logistics
+  {id:'GIAA',name:'Garuda Indonesia',sector:'Aviation'},
+  {id:'BIRD',name:'Blue Bird',sector:'Transport'},
+  {id:'MAPI',name:'Mitra Adiperkasa',sector:'Retail'},
+  {id:'LPPF',name:'Matahari Department Store',sector:'Retail'},
+  {id:'RALS',name:'Ramayana Lestari',sector:'Retail'},
+  // Metals & Materials
+  {id:'ANTM',name:'Aneka Tambang',sector:'Mining'},
+  {id:'PTBA',name:'Bukit Asam',sector:'Mining'},
+  {id:'MDKA',name:'Merdeka Copper Gold',sector:'Mining'},
+  {id:'DKFT',name:'Central Omega Resources',sector:'Mining'},
+  {id:'INCO',name:'Vale Indonesia',sector:'Mining'},
+  {id:'TINS',name:'Timah',sector:'Mining'},
+  // Financials
+  {id:'PJAA',name:'Pembangunan Jaya Ancol',sector:'Finance'},
+  {id:'MFIN',name:'Mandala Multifinance',sector:'Finance'},
+  {id:'ADMF',name:'Adira Multifinance',sector:'Finance'},
+  {id:'BFIN',name:'BFI Finance',sector:'Finance'},
+  {id:'BPFI',name:'Batavia Prosperindo Finance',sector:'Finance'},
+  // Plantation
+  {id:'AALI',name:'Astra Agro Lestari',sector:'Plantation'},
+  {id:'LSIP',name:'PP London Sumatra',sector:'Plantation'},
+  {id:'SIMP',name:'Salim Ivomas Pratama',sector:'Plantation'},
+  {id:'TBLA',name:'Tunas Baru Lampung',sector:'Plantation'},
+  // Media
+  {id:'SCMA',name:'Surya Citra Media',sector:'Media'},
+  {id:'MNCN',name:'Media Nusantara Citra',sector:'Media'},
+  // Others
+  {id:'JSMR',name:'Jasa Marga',sector:'Toll Road'},
+  {id:'MTEL',name:'Mitratel',sector:'Tower'},
+  {id:'TOWR',name:'Sarana Menara Nusantara',sector:'Tower'},
+  {id:'ACES',name:'Ace Hardware Indonesia',sector:'Retail'},
+  {id:'SIDO',name:'Industri Jamu Sido Muncul',sector:'Consumer'},
+  {id:'UNTR',name:'United Tractors',sector:'Heavy Equipment'},
+  {id:'TKIM',name:'Pabrik Kertas Tjiwi Kimia',sector:'Paper'},
+  {id:'INKP',name:'Indah Kiat Pulp & Paper',sector:'Paper'},
+  {id:'TPIA',name:'Chandra Asri Petrochemical',sector:'Chemicals'},
+  {id:'BRPT',name:'Barito Pacific',sector:'Chemicals'},
+];
+
+// Deduplicate
+const STOCKS = IDX_STOCKS.filter((s,i,a) => a.findIndex(x=>x.id===s.id)===i);
+
+// Cached price data
+const priceCache = {};
+const chartCache = {};
+
+// ════════════════════════════════════════════
+// SETUP
+// ════════════════════════════════════════════
+function activateTerminal() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    alert('Format API key tidak valid. Harus dimulai dengan sk-ant-');
+    return;
+  }
+  ANTHROPIC_KEY = key;
+  sessionStorage.setItem('saddanKey', key);
+  document.getElementById('setup-screen').classList.add('hidden');
+  initTerminal();
+}
+
+window.onload = () => {
+  const saved = sessionStorage.getItem('saddanKey');
+  if (saved) {
+    ANTHROPIC_KEY = saved;
+    document.getElementById('setup-screen').classList.add('hidden');
+    initTerminal();
+  }
+  // Fill modal stock select
+  const sel = document.getElementById('m-stock');
+  STOCKS.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = `${s.id} — ${s.name}`;
+    sel.appendChild(o);
+  });
+};
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+function initTerminal() {
+  renderWatchlist(STOCKS);
+  renderSectors();
+  renderNews();
+  renderPortfolio();
+  startClock();
+  loadPrices();
+  setInterval(loadPrices, 60000); // refresh every 60s
+}
+
+// ════════════════════════════════════════════
+// CLOCK
+// ════════════════════════════════════════════
+function startClock() {
+  setInterval(() => {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('id-ID') + ' WIB';
+  }, 1000);
+}
+
+// ════════════════════════════════════════════
+// YAHOO FINANCE API
+// ════════════════════════════════════════════
+const PROXY = 'https://corsproxy.io/?';
+const YF = 'https://query1.finance.yahoo.com';
+
+async function fetchPrice(ticker) {
+  try {
+    const url = `${YF}/v8/finance/chart/${ticker}.JK?interval=1d&range=1d`;
+    const r = await fetch(PROXY + encodeURIComponent(url));
+    const d = await r.json();
+    const result = d?.chart?.result?.[0];
+    if (!result) return null;
+    const meta = result.meta;
+    return {
+      price: meta.regularMarketPrice,
+      prevClose: meta.previousClose || meta.chartPreviousClose,
+      vol: meta.regularMarketVolume,
+      high52: meta.fiftyTwoWeekHigh,
+      low52: meta.fiftyTwoWeekLow,
+      mktCap: meta.marketCap,
+      pe: meta.trailingPE,
+    };
+  } catch { return null; }
+}
+
+async function fetchChart(ticker, range='3mo') {
+  try {
+    const url = `${YF}/v8/finance/chart/${ticker}.JK?interval=1d&range=${range}`;
+    const r = await fetch(PROXY + encodeURIComponent(url));
+    const d = await r.json();
+    const result = d?.chart?.result?.[0];
+    if (!result) return [];
+    const ts = result.timestamp;
+    const closes = result.indicators.quote[0].close;
+    const vols = result.indicators.quote[0].volume;
+    const highs = result.indicators.quote[0].high;
+    const lows = result.indicators.quote[0].low;
+    return ts.map((t,i) => ({
+      date: new Date(t*1000).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}),
+      close: closes[i], vol: vols[i], high: highs[i], low: lows[i]
+    })).filter(x => x.close != null);
+  } catch { return []; }
+}
+
+// Load prices for watchlist (batch, prioritize visible)
+async function loadPrices() {
+  // Load COMIC #7 first
+  const priority = ['PGEO','BREN','TLKM','BBCA','BBRI','BMRI','ASII','TLKM'];
+  for (const id of priority) {
+    const data = await fetchPrice(id);
+    if (data) {
+      priceCache[id] = data;
+      updateStockRow(id, data);
+      updateComicPanel(id, data);
+    }
+  }
+  // Update IHSG
+  try {
+    const url = `${YF}/v8/finance/chart/%5EJKSE?interval=1d&range=1d`;
+    const r = await fetch(PROXY + encodeURIComponent(url));
+    const d = await r.json();
+    const meta = d?.chart?.result?.[0]?.meta;
+    if (meta) {
+      const chg = ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose * 100).toFixed(2);
+      document.getElementById('ihsg-val').textContent = `${meta.regularMarketPrice?.toFixed(0)} ${chg>0?'▲':'▼'}${Math.abs(chg)}%`;
+      document.getElementById('ihsg-val').className = chg>=0 ? 'green' : 'red';
+    }
+  } catch {}
+  updateTicker();
+}
+
+function updateStockRow(id, data) {
+  if (!data) return;
+  const chg = ((data.price - data.prevClose) / data.prevClose * 100);
+  const row = document.getElementById(`row-${id}`);
+  if (row) {
+    row.querySelector('.sr-price').textContent = 'Rp ' + data.price.toLocaleString();
+    const chgEl = row.querySelector('.sr-chg');
+    chgEl.textContent = (chg>=0?'+':'') + chg.toFixed(2) + '%';
+    chgEl.className = 'sr-chg ' + (chg>=0?'green':'red');
+  }
+}
+
+function updateComicPanel(id, data) {
+  if (!data) return;
+  const chg = ((data.price - data.prevClose) / data.prevClose * 100);
+  const pEl = document.getElementById(`cr-${id}-p`);
+  const sEl = document.getElementById(`cr-${id}-s`);
+  if (pEl) pEl.textContent = 'Rp ' + data.price.toLocaleString();
+  // compute quick signal
+  if (sEl) {
+    const sig = quickSignal(chg, data);
+    sEl.textContent = sig.label;
+    sEl.style.color = sig.color;
+  }
+}
+
+function updateTicker() {
+  const items = Object.entries(priceCache).map(([id, d]) => {
+    const chg = ((d.price - d.prevClose) / d.prevClose * 100).toFixed(2);
+    const color = chg>=0 ? '#00ff88' : '#ff3355';
+    return `<span class="tick-item"><span class="tick-id">${id}</span><span style="color:${color}">${d.price.toLocaleString()} ${chg>=0?'▲':'▼'}${Math.abs(chg)}%</span></span>`;
+  });
+  const html = items.join('') + items.join('');
+  document.getElementById('ticker-inner').innerHTML = html || 'Loading...';
+}
+
+// ════════════════════════════════════════════
+// SIGNAL ENGINE
+// ════════════════════════════════════════════
+function computeRSI(closes, period=14) {
+  if (closes.length < period+1) return 50;
+  let gains=0, losses=0;
+  for(let i=closes.length-period; i<closes.length; i++){
+    const diff = closes[i] - closes[i-1];
+    if(diff>0) gains+=diff; else losses+=Math.abs(diff);
+  }
+  const rs = gains/losses;
+  return 100 - 100/(1+rs);
+}
+
+function computeMA(closes, period) {
+  if(closes.length < period) return closes[closes.length-1];
+  return closes.slice(-period).reduce((a,b)=>a+b,0)/period;
+}
+
+function computeSignal(closes, vols, mode='scalping') {
+  if(!closes.length) return {label:'—', color:'#555', strength:'—', score:0};
+  const rsi = computeRSI(closes);
+  const ma20 = computeMA(closes, 20);
+  const ma50 = computeMA(closes, 50);
+  const price = closes[closes.length-1];
+  const avgVol = vols.slice(-20).reduce((a,b)=>a+b,0)/20;
+  const curVol = vols[vols.length-1] || 0;
+  const volSpike = curVol / avgVol;
+  const trend = price > ma20 && ma20 > ma50;
+  const momentum = closes.slice(-3);
+  const rising3 = momentum[2] > momentum[1] && momentum[1] > momentum[0];
+
+  if(mode === 'scalping') {
+    // Scalping: RSI extremes + volume spike + short momentum
+    if(rsi < 35 && volSpike > 1.5 && rising3) return {label:'STRONG BUY',color:'#00ff88',strength:'SCALP ENTRY',score:9};
+    if(rsi < 40 && rising3) return {label:'BUY',color:'#00cc66',strength:'SCALP SETUP',score:7};
+    if(rsi > 70 && !rising3) return {label:'SELL/EXIT',color:'#ff3355',strength:'TAKE PROFIT',score:8};
+    if(rsi > 65) return {label:'CAUTION',color:'#ffaa00',strength:'NEAR OVERBOUGHT',score:5};
+    if(rsi < 45 && trend) return {label:'WATCH',color:'#4488ff',strength:'POTENTIAL ENTRY',score:6};
+    return {label:'HOLD',color:'#888',strength:'NO SIGNAL',score:3};
+  } else {
+    // Growth: trend-following, MA crossover
+    if(trend && rsi > 40 && rsi < 65 && volSpike > 1.2) return {label:'STRONG BUY',color:'#00ff88',strength:'GROWTH TREND',score:9};
+    if(trend && rsi < 55) return {label:'BUY',color:'#00cc66',strength:'ACCUMULATE',score:7};
+    if(!trend && rsi > 60) return {label:'REDUCE',color:'#ff9500',strength:'TRIM POSITION',score:5};
+    if(rsi > 75) return {label:'SELL',color:'#ff3355',strength:'OVERBOUGHT',score:8};
+    if(price < ma50) return {label:'WAIT',color:'#888',strength:'BELOW MA50',score:2};
+    return {label:'HOLD',color:'#4488ff',strength:'IN POSITION',score:5};
+  }
+}
+
+function quickSignal(chgPct, data) {
+  if(chgPct > 2) return {label:'BUY ▲',color:'#00ff88'};
+  if(chgPct > 0.5) return {label:'WATCH',color:'#4488ff'};
+  if(chgPct < -2) return {label:'SELL ▼',color:'#ff3355'};
+  if(chgPct < -0.5) return {label:'CAUTION',color:'#ffaa00'};
+  return {label:'HOLD',color:'#888'};
+}
+
+// ════════════════════════════════════════════
+// RENDER WATCHLIST
+// ════════════════════════════════════════════
+function renderWatchlist(stocks) {
+  const container = document.getElementById('stock-list');
+  container.innerHTML = '';
+  stocks.forEach(s => {
+    const cached = priceCache[s.id];
+    const price = cached ? 'Rp ' + cached.price.toLocaleString() : '—';
+    const chg = cached ? ((cached.price-cached.prevClose)/cached.prevClose*100).toFixed(2) : '—';
+    const chgClass = cached ? (parseFloat(chg)>=0?'green':'red') : 'dim';
+    const chgStr = cached ? (parseFloat(chg)>=0?'+':'')+chg+'%' : 'memuat...';
+    const div = document.createElement('div');
+    div.className = 'stock-row';
+    div.id = `row-${s.id}`;
+    div.onclick = () => selectStock(s.id);
+    div.innerHTML = `
+      <div class="sr-top">
+        <span class="sr-id">${s.id}</span>
+        <span class="sr-signal dim" id="sig-${s.id}">—</span>
+      </div>
+      <div class="sr-bottom">
+        <span class="sr-price">${price}</span>
+        <span class="sr-chg ${chgClass}">${chgStr}</span>
+      </div>
+      <div style="color:var(--dim);font-size:9px;margin-top:2px">${s.sector}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function filterStocks(q) {
+  const filtered = STOCKS.filter(s =>
+    s.id.includes(q.toUpperCase()) || s.name.toLowerCase().includes(q.toLowerCase()) || s.sector.toLowerCase().includes(q.toLowerCase())
+  );
+  renderWatchlist(filtered);
+}
+
+// ════════════════════════════════════════════
+// SELECT STOCK
+// ════════════════════════════════════════════
+async function selectStock(id) {
+  const stock = STOCKS.find(s => s.id === id);
+  if (!stock) return;
+  currentStock = stock;
+
+  // Highlight row
+  document.querySelectorAll('.stock-row').forEach(r => r.classList.remove('active'));
+  const row = document.getElementById(`row-${id}`);
+  if(row) row.classList.add('active');
+
+  // Update header
+  document.getElementById('sh-ticker').textContent = id;
+  document.getElementById('sh-name').textContent = stock.name + ' · ' + stock.sector;
+  document.getElementById('sh-price').textContent = 'Memuat...';
+  document.getElementById('sh-chg').textContent = '';
+
+  // Fetch fresh data
+  const [priceData, chartData] = await Promise.all([
+    fetchPrice(id),
+    chartCache[id] || fetchChart(id)
+  ]);
+  chartCache[id] = chartData;
+  currentChartData = chartData;
+
+  if (priceData) {
+    priceCache[id] = priceData;
+    const chg = ((priceData.price - priceData.prevClose) / priceData.prevClose * 100);
+    document.getElementById('sh-price').textContent = 'Rp ' + priceData.price.toLocaleString();
+    const chgEl = document.getElementById('sh-chg');
+    chgEl.textContent = (chg>=0?'▲ +':'▼ ') + chg.toFixed(2) + '% dari kemarin';
+    chgEl.className = 'chg-line ' + (chg>=0?'green':'red');
+
+    // Stats
+    document.getElementById('st-vol').textContent = priceData.vol ? (priceData.vol/1e6).toFixed(1)+'M' : '—';
+    document.getElementById('st-cap').textContent = priceData.mktCap ? 'Rp '+(priceData.mktCap/1e12).toFixed(1)+'T' : '—';
+    document.getElementById('st-high').textContent = priceData.high52 ? 'Rp '+priceData.high52.toLocaleString() : '—';
+    document.getElementById('st-low').textContent = priceData.low52 ? 'Rp '+priceData.low52.toLocaleString() : '—';
+    document.getElementById('st-pe').textContent = priceData.pe ? priceData.pe.toFixed(1) : '—';
+
+    updateComicPanel(id, priceData);
+    updateStockRow(id, priceData);
+  }
+
+  // Compute signal
+  const closes = chartData.map(x=>x.close);
+  const vols = chartData.map(x=>x.vol);
+  const rsi = computeRSI(closes);
+  document.getElementById('st-rsi').textContent = rsi.toFixed(1);
+  const sig = computeSignal(closes, vols, currentMode);
+  document.getElementById(`sig-${id}`).textContent = sig.label;
+  document.getElementById(`sig-${id}`).style.color = sig.color;
+  const sigBox = document.getElementById('signal-box');
+  sigBox.textContent = sig.label;
+  sigBox.style.color = sig.color;
+  sigBox.style.borderColor = sig.color;
+  sigBox.style.background = sig.color + '18';
+  document.getElementById('signal-sub').textContent = sig.strength + ' · SCORE ' + sig.score + '/10';
+
+  // Draw charts
+  if(chartData.length) {
+    drawPriceChart(chartData);
+    drawVolChart(chartData);
+    drawRSIChart(chartData);
+  }
+}
+
+// ════════════════════════════════════════════
+// CANVAS CHARTS
+// ════════════════════════════════════════════
+function resizeCanvas(id) {
+  const c = document.getElementById(id);
+  const container = c.parentElement;
+  c.width = container.clientWidth || 580;
+  return c;
+}
+
+function drawPriceChart(data) {
+  const c = resizeCanvas('chart-price');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0,0,W,H);
+
+  const closes = data.map(d=>d.close);
+  const ma20vals = closes.map((_,i) => computeMA(closes.slice(0,i+1),Math.min(20,i+1)));
+  const ma50vals = closes.map((_,i) => computeMA(closes.slice(0,i+1),Math.min(50,i+1)));
+  const min = Math.min(...closes)*0.99, max = Math.max(...closes)*1.01;
+  const pad = {l:50,r:10,t:10,b:20};
+  const gW = W-pad.l-pad.r, gH = H-pad.t-pad.b;
+  const scX = i => pad.l + (i/(data.length-1))*gW;
+  const scY = v => pad.t + (1-(v-min)/(max-min))*gH;
+
+  // Grid
+  ctx.strokeStyle='#111'; ctx.lineWidth=1;
+  for(let i=0;i<4;i++){
+    const y = pad.t + i*gH/3;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle='#444'; ctx.font='9px Share Tech Mono';
+    ctx.fillText((min+(max-min)*(1-i/3)).toFixed(0),2,y+4);
+  }
+
+  // Area under price
+  ctx.beginPath();
+  ctx.moveTo(scX(0), scY(closes[0]));
+  closes.forEach((v,i) => ctx.lineTo(scX(i),scY(v)));
+  ctx.lineTo(scX(closes.length-1), H-pad.b);
+  ctx.lineTo(scX(0), H-pad.b);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#ff6a0033'); grad.addColorStop(1,'#ff6a0000');
+  ctx.fillStyle=grad; ctx.fill();
+
+  // Price line
+  ctx.strokeStyle='#ff6a00'; ctx.lineWidth=1.5; ctx.beginPath();
+  closes.forEach((v,i) => i===0?ctx.moveTo(scX(i),scY(v)):ctx.lineTo(scX(i),scY(v)));
+  ctx.stroke();
+
+  // MA20
+  ctx.strokeStyle='#4488ff'; ctx.lineWidth=1; ctx.beginPath();
+  ma20vals.forEach((v,i) => i===0?ctx.moveTo(scX(i),scY(v)):ctx.lineTo(scX(i),scY(v)));
+  ctx.stroke();
+
+  // MA50
+  ctx.strokeStyle='#aa66ff'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.beginPath();
+  ma50vals.forEach((v,i) => i===0?ctx.moveTo(scX(i),scY(v)):ctx.lineTo(scX(i),scY(v)));
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Labels
+  ctx.fillStyle='#ff6a00'; ctx.font='8px Share Tech Mono'; ctx.fillText('PRICE',W-40,14);
+  ctx.fillStyle='#4488ff'; ctx.fillText('MA20',W-40,24);
+  ctx.fillStyle='#aa66ff'; ctx.fillText('MA50',W-40,34);
+
+  // X axis labels
+  ctx.fillStyle='#444'; ctx.font='8px Share Tech Mono';
+  [0,Math.floor(data.length/3),Math.floor(data.length*2/3),data.length-1].forEach(i=>{
+    ctx.fillText(data[i].date,scX(i)-12,H-4);
+  });
+}
+
+function drawVolChart(data) {
+  const c = resizeCanvas('chart-vol');
+  const ctx = c.getContext('2d');
+  const W=c.width,H=c.height;
+  ctx.clearRect(0,0,W,H);
+  const vols=data.map(d=>d.vol||0);
+  const maxV=Math.max(...vols)||1;
+  const bW=W/vols.length;
+  const avgV=vols.reduce((a,b)=>a+b,0)/vols.length;
+  vols.forEach((v,i)=>{
+    const h=(v/maxV)*(H-8);
+    ctx.fillStyle= v>avgV*1.5 ? '#ff6a0066' : '#1a3a2a';
+    ctx.fillRect(i*bW+1,H-h,bW-2,h);
+  });
+  // avg line
+  ctx.strokeStyle='#333'; ctx.lineWidth=1; ctx.setLineDash([2,2]);
+  ctx.beginPath(); ctx.moveTo(0,H-(avgV/maxV)*(H-8)); ctx.lineTo(W,H-(avgV/maxV)*(H-8)); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawRSIChart(data) {
+  const c = resizeCanvas('chart-rsi');
+  const ctx = c.getContext('2d');
+  const W=c.width,H=c.height;
+  ctx.clearRect(0,0,W,H);
+  const closes=data.map(d=>d.close);
+  const rsiVals=closes.map((_,i)=>i<1?50:computeRSI(closes.slice(0,i+1)));
+  const scX=i=>((i/(data.length-1))*W);
+  const scY=v=>H-((v/100)*(H-4))-2;
+
+  // Zones
+  ctx.fillStyle='#ff335508'; ctx.fillRect(0,scY(70),W,scY(100)-scY(70));
+  ctx.fillStyle='#00ff8808'; ctx.fillRect(0,scY(30),W,scY(0)-scY(30));
+
+  // Lines at 30/70
+  ctx.strokeStyle='#ff3355'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(0,scY(70)); ctx.lineTo(W,scY(70)); ctx.stroke();
+  ctx.strokeStyle='#00ff88';
+  ctx.beginPath(); ctx.moveTo(0,scY(30)); ctx.lineTo(W,scY(30)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // RSI line
+  ctx.strokeStyle='#aa66ff'; ctx.lineWidth=1.5; ctx.beginPath();
+  rsiVals.forEach((v,i)=>i===0?ctx.moveTo(scX(i),scY(v)):ctx.lineTo(scX(i),scY(v)));
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle='#ff3355'; ctx.font='8px Share Tech Mono'; ctx.fillText('70',2,scY(70)+4);
+  ctx.fillStyle='#00ff88'; ctx.fillText('30',2,scY(30)+4);
+  const lastRSI = rsiVals[rsiVals.length-1];
+  const rsiColor = lastRSI>70?'#ff3355':lastRSI<30?'#00ff88':'#aa66ff';
+  ctx.fillStyle=rsiColor; ctx.font='bold 9px Share Tech Mono';
+  ctx.fillText(lastRSI.toFixed(1),W-30,scY(lastRSI)+4);
+}
+
+// ════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════
+function switchTab(name, btn) {
+  ['chart','analysis','portfolio','screener'].forEach(t => {
+    document.getElementById('tab-'+t).classList.add('hidden');
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  btn.classList.add('active');
+  if(name==='portfolio') renderPortfolio();
+}
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mode-label').textContent = mode.toUpperCase();
+  if(currentStock) selectStock(currentStock.id);
+}
+
+// ════════════════════════════════════════════
+// AI ANALYSIS
+// ════════════════════════════════════════════
+async function runAnalysis() {
+  if(!currentStock) { alert('Pilih saham dulu!'); return; }
+  if(!ANTHROPIC_KEY) { alert('API Key belum diset!'); return; }
+
+  const btn = document.getElementById('ai-btn');
+  const btnText = document.getElementById('ai-btn-text');
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner">⟳</span> MENGANALISIS...';
+
+  const data = priceCache[currentStock.id];
+  const closes = currentChartData.map(x=>x.close);
+  const vols = currentChartData.map(x=>x.vol);
+  const rsi = computeRSI(closes);
+  const ma20 = computeMA(closes,20);
+  const ma50 = computeMA(closes,50);
+  const price = data?.price || closes[closes.length-1];
+  const chgPct = data ? ((data.price-data.prevClose)/data.prevClose*100).toFixed(2) : '—';
+  const volAvg = (vols.slice(-20).reduce((a,b)=>a+b,0)/20/1e6).toFixed(1);
+  const volCur = (vols[vols.length-1]/1e6||0).toFixed(1);
+  const recent5 = closes.slice(-5).map(x=>x?.toFixed(0)).join(', ');
+
+  const modePrompt = currentMode === 'scalping'
+    ? 'Fokus pada analisis untuk SCALPING dan INTRADAY trading. Berikan: sinyal masuk yang tepat, target profit cepat (1-3%), stop loss ketat.'
+    : 'Fokus pada analisis untuk GROWTH/SWING trading. Berikan: potensi kenaikan jangka menengah, level akumulasi, target 1-3 bulan.';
+
+  const prompt = `Kamu adalah analis saham IDX profesional dengan keahlian teknikal dan fundamental. ${modePrompt}
+
+SAHAM: ${currentStock.id} — ${currentStock.name} (${currentStock.sector})
+HARGA SEKARANG: Rp ${price?.toLocaleString()}
+PERUBAHAN HARI INI: ${chgPct}%
+RSI(14): ${rsi.toFixed(1)}
+MA20: Rp ${ma20?.toFixed(0)}
+MA50: Rp ${ma50?.toFixed(0)}
+POSISI HARGA vs MA20: ${price>ma20?'DI ATAS':'DI BAWAH'} MA20
+POSISI HARGA vs MA50: ${price>ma50?'DI ATAS':'DI BAWAH'} MA50
+VOLUME RATA-RATA 20H: ${volAvg}M
+VOLUME HARI INI: ${volCur}M (${((volCur/volAvg)*100).toFixed(0)}% dari rata-rata)
+5 HARGA TERAKHIR: ${recent5}
+52W HIGH: Rp ${data?.high52?.toLocaleString() || '—'}
+52W LOW: Rp ${data?.low52?.toLocaleString() || '—'}
+P/E: ${data?.pe?.toFixed(1) || '—'}
+
+Berikan analisis dalam format berikut (gunakan Bahasa Indonesia, padat dan actionable):
+
+📊 RINGKASAN KONDISI
+(2-3 kalimat kondisi teknikal saat ini)
+
+✅ FAKTOR BULLISH
+• ...
+• ...
+
+⚠️ FAKTOR RISIKO
+• ...
+• ...
+
+🎯 REKOMENDASI ${currentMode.toUpperCase()}
+ACTION: [BUY / HOLD / SELL / WAIT]
+ENTRY: Rp ...
+TARGET 1: Rp ... (+...%)
+TARGET 2: Rp ... (+...%)
+STOP LOSS: Rp ... (-...%)
+TIMEFRAME: ...
+
+💡 CATATAN PENTING
+(1-2 catalyst atau hal yang perlu dimonitor)
+
+SKOR KEPERCAYAAN: .../10`;
+
+  const output = document.getElementById('ai-output');
+  output.style.color = 'var(--text)';
+  output.textContent = '';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const d = await res.json();
+    if(d.error) { output.textContent = '❌ Error: ' + d.error.message; }
+    else { output.textContent = d.content?.[0]?.text || 'Tidak ada respons.'; }
+  } catch(e) {
+    output.textContent = '❌ Gagal terhubung ke AI. Cek koneksi internet.\n\n' + e.message;
+  }
+
+  btn.disabled = false;
+  btnText.textContent = '▸ JALANKAN AI ANALYSIS';
+}
+
+// ════════════════════════════════════════════
+// SCREENER
+// ════════════════════════════════════════════
+async function runScreener(type, btn) {
+  document.querySelectorAll('#tab-screener .mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const status = document.getElementById('screen-status');
+  const tbody = document.getElementById('screener-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="color:var(--dim);padding:20px;text-align:center">Memuat data (ini butuh ~30 detik)...</td></tr>';
+  status.textContent = 'SCANNING...';
+
+  // Scan top 20 stocks
+  const toScan = STOCKS.slice(0,20);
+  const results = [];
+
+  for(const stock of toScan) {
+    try {
+      let data = priceCache[stock.id];
+      if(!data) data = await fetchPrice(stock.id);
+      if(!data) continue;
+      priceCache[stock.id] = data;
+
+      let chart = chartCache[stock.id];
+      if(!chart || chart.length < 5) chart = await fetchChart(stock.id);
+      chartCache[stock.id] = chart;
+
+      const closes = chart.map(x=>x.close);
+      const vols = chart.map(x=>x.vol);
+      const rsi = computeRSI(closes);
+      const sig = computeSignal(closes, vols, type==='oversold'?'scalping':type);
+      const chg = ((data.price-data.prevClose)/data.prevClose*100).toFixed(2);
+
+      let include = false;
+      if(type==='scalping' && sig.score>=6) include=true;
+      if(type==='growth' && sig.score>=6 && sig.label.includes('BUY')) include=true;
+      if(type==='oversold' && rsi<35) include=true;
+
+      if(include) results.push({stock, data, rsi, sig, chg});
+    } catch {}
+    status.textContent = `SCANNING ${results.length} hits...`;
+  }
+
+  results.sort((a,b)=>b.sig.score-a.sig.score);
+  tbody.innerHTML = results.length ? results.map(r=>`
+    <tr style="cursor:pointer" onclick="selectStock('${r.stock.id}');switchTab('chart',document.querySelector('.tab-btn'))">
+      <td style="color:var(--orange);font-weight:700">${r.stock.id}</td>
+      <td>Rp ${r.data.price.toLocaleString()}</td>
+      <td class="${parseFloat(r.chg)>=0?'green':'red'}">${r.chg>=0?'+':''}${r.chg}%</td>
+      <td style="color:${r.rsi>70?'#ff3355':r.rsi<30?'#00ff88':'var(--text)'}">${r.rsi.toFixed(1)}</td>
+      <td style="color:${r.sig.color}">${r.sig.label}</td>
+      <td style="color:var(--orange)">${r.sig.score}/10</td>
+    </tr>`).join('') :
+    '<tr><td colspan="6" style="color:var(--dim);padding:20px;text-align:center">Tidak ada sinyal yang memenuhi kriteria saat ini</td></tr>';
+  status.textContent = results.length + ' HASIL';
+}
+
+// ════════════════════════════════════════════
+// PORTFOLIO
+// ════════════════════════════════════════════
+function renderPortfolio() {
+  let totalVal=0, totalPnl=0;
+  const rows = portfolio.map(p => {
+    const data = priceCache[p.id];
+    const cur = data?.price || p.avgPrice;
+    const val = p.lot * 100 * cur;
+    const pnl = (cur - p.avgPrice) * p.lot * 100;
+    const pct = ((cur-p.avgPrice)/p.avgPrice*100).toFixed(2);
+    totalVal += val; totalPnl += pnl;
+    return `<tr>
+      <td style="color:var(--orange);font-weight:700;cursor:pointer" onclick="selectStock('${p.id}')">${p.id}</td>
+      <td>${p.lot}</td>
+      <td>Rp ${p.avgPrice.toLocaleString()}</td>
+      <td>Rp ${cur.toLocaleString()}</td>
+      <td>Rp ${(val/1e6).toFixed(2)}jt</td>
+      <td class="${pnl>=0?'green':'red'}">${pnl>=0?'+':''}Rp ${(pnl/1e6).toFixed(2)}jt</td>
+      <td class="${parseFloat(pct)>=0?'green':'red'}">${pct>=0?'+':''}${pct}%</td>
+      <td><span style="color:var(--dim);cursor:pointer;font-size:10px" onclick="removePosition('${p.id}')">✕</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('port-body').innerHTML = rows || '<tr><td colspan="8" style="color:var(--dim);padding:16px;text-align:center">Belum ada posisi. Klik + Tambah Posisi</td></tr>';
+  document.getElementById('port-total').textContent = 'Rp ' + (totalVal/1e6).toFixed(2) + 'jt';
+  const pnlEl = document.getElementById('port-pnl');
+  pnlEl.textContent = (totalPnl>=0?'+':'') + 'Rp ' + (totalPnl/1e6).toFixed(2) + 'jt';
+  pnlEl.className = 'pc-val ' + (totalPnl>=0?'green':'red');
+}
+
+function showAddModal() { document.getElementById('add-modal').classList.remove('hidden'); }
+function hideModal() { document.getElementById('add-modal').classList.add('hidden'); }
+
+function addPosition() {
+  const id = document.getElementById('m-stock').value;
+  const lot = parseInt(document.getElementById('m-lot').value);
+  const price = parseInt(document.getElementById('m-price').value);
+  if(!id||!lot||!price) { alert('Lengkapi semua field!'); return; }
+  const existing = portfolio.findIndex(p=>p.id===id);
+  if(existing>=0) {
+    const old = portfolio[existing];
+    const totalShares = (old.lot + lot) * 100;
+    const avgPrice = (old.avgPrice*old.lot*100 + price*lot*100) / totalShares;
+    portfolio[existing] = {id, lot:old.lot+lot, avgPrice:Math.round(avgPrice)};
+  } else {
+    portfolio.push({id, lot, avgPrice:price});
+  }
+  localStorage.setItem('saddanPort', JSON.stringify(portfolio));
+  hideModal();
+  renderPortfolio();
+}
+
+function removePosition(id) {
+  if(!confirm(`Hapus posisi ${id}?`)) return;
+  portfolio = portfolio.filter(p=>p.id!==id);
+  localStorage.setItem('saddanPort', JSON.stringify(portfolio));
+  renderPortfolio();
+}
+
+// ════════════════════════════════════════════
+// SECTOR & NEWS
+// ════════════════════════════════════════════
+function renderSectors() {
+  const sectors = [
+    {name:'Energy',perf:4.2},{name:'Banking',perf:1.8},{name:'Mining',perf:1.1},
+    {name:'Telecom',perf:0.95},{name:'Consumer',perf:-0.3},
+    {name:'Property',perf:-0.8},{name:'Automotive',perf:-1.4}
+  ];
+  document.getElementById('sector-section').innerHTML = sectors.map(s=>`
+    <div class="sector-bar">
+      <div class="sec-row">
+        <span class="sec-name">${s.name}</span>
+        <span style="color:${s.perf>=0?'var(--green)':'var(--red)'}">${s.perf>=0?'+':''}${s.perf}%</span>
+      </div>
+      <div class="sec-track"><div class="sec-fill" style="width:${Math.min(Math.abs(s.perf)*18,100)}%;background:${s.perf>=0?'var(--green)':'var(--red)'}"></div></div>
+    </div>`).join('');
+}
+
+function renderNews() {
+  const news = [
+    {time:'14:32',tag:'BULLISH',headline:'PGEO: Ekspansi geothermal Sulawesi Rp 2.1T disetujui ESDM'},
+    {time:'13:47',tag:'BULLISH',headline:'BREN raih green bond internasional $500jt dengan yield kompetitif'},
+    {time:'12:15',tag:'NEUTRAL',headline:'BI pertahankan BI Rate 5.75%, Rupiah stabil di 15.820/USD'},
+    {time:'11:30',tag:'BULLISH',headline:'BBCA: Kredit tumbuh 14.2% YoY, NPL terjaga 1.4%'},
+    {time:'10:58',tag:'BEARISH',headline:'ASII: Penjualan mobil Feb turun 8% MoM, tekanan daya beli'},
+    {time:'09:45',tag:'NEUTRAL',headline:'IHSG dibuka menguat 0.6%, sektor energi pimpin kenaikan'},
+  ];
+  const tagColor = t => t==='BULLISH'?['#00ff8822','#00ff88']:t==='BEARISH'?['#ff335522','#ff3355']:['#ffaa0022','#ffaa00'];
+  document.getElementById('news-section').innerHTML = news.map(n=>{
+    const [bg,col]=tagColor(n.tag);
+    return `<div class="news-item">
+      <div class="news-meta">
+        <span class="news-time">${n.time} WIB</span>
+        <span class="news-tag" style="background:${bg};color:${col}">${n.tag}</span>
+      </div>
+      <div class="news-headline">${n.headline}</div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
