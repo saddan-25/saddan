@@ -233,8 +233,9 @@
   <p>IDX Personal Command Center<br>Masukkan Anthropic API Key lu untuk mengaktifkan AI Analysis.<br>Key disimpan hanya di browser lu (session storage) — aman.</p>
   <div class="setup-label">ANTHROPIC API KEY</div>
   <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." />
-  <button onclick="activateTerminal()">▸ AKTIFKAN TERMINAL</button>
-  <p style="font-size:9px;color:#333">Belum punya key? Daftar di console.anthropic.com → API Keys</p>
+  <button id="activate-btn" onclick="activateTerminal()">▸ AKTIFKAN TERMINAL</button>
+  <p id="setup-status" style="font-size:10px;color:#ff6a00;min-height:16px"></p>
+  <p style="font-size:9px;color:#333">Belum punya key? Daftar di console.anthropic.com → API Keys<br>Key tersimpan permanen di browser lu (localStorage) — tidak perlu input lagi</p>
 </div>
 
 <!-- HEADER -->
@@ -563,18 +564,30 @@ const chartCache = {};
 // ════════════════════════════════════════════
 function activateTerminal() {
   const key = document.getElementById('api-key-input').value.trim();
-  if (!key.startsWith('sk-ant-')) {
-    alert('Format API key tidak valid. Harus dimulai dengan sk-ant-');
+  const status = document.getElementById('setup-status');
+  const btn = document.getElementById('activate-btn');
+  
+  if (key.length < 20) {
+    status.style.color = '#ff3355';
+    status.textContent = '❌ Key terlalu pendek — pastikan copy lengkap dari console.anthropic.com';
     return;
   }
+  
+  status.style.color = '#ff6a00';
+  status.textContent = '⟳ Mengaktifkan terminal...';
+  btn.disabled = true;
+  
   ANTHROPIC_KEY = key;
-  sessionStorage.setItem('saddanKey', key);
-  document.getElementById('setup-screen').classList.add('hidden');
-  initTerminal();
+  localStorage.setItem('saddanKey', key);
+  
+  setTimeout(() => {
+    document.getElementById('setup-screen').classList.add('hidden');
+    initTerminal();
+  }, 500);
 }
 
 window.onload = () => {
-  const saved = sessionStorage.getItem('saddanKey');
+  const saved = localStorage.getItem('saddanKey');
   if (saved) {
     ANTHROPIC_KEY = saved;
     document.getElementById('setup-screen').classList.add('hidden');
